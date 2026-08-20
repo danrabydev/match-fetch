@@ -1,9 +1,4 @@
-import {
-  jsonOf,
-  Json,
-  type HttpErr,
-  type Json as JsonOf,
-} from "./json.js";
+import { jsonOf, Json, type Json as JsonOf } from "./json.js";
 import { toFetchResult, type FetchResult } from "./result.js";
 import {
   splitInit,
@@ -106,21 +101,21 @@ export class ApiBase {
   getJson<TResponse, TErr = unknown>(
     input: RequestInfo | URL,
     init?: JsonGetInit,
-  ): Promise<JsonOf<TResponse, HttpErr<TErr>>> {
+  ): Promise<JsonOf<TResponse>> {
     return this.requestAsJson<TResponse, TErr>("GET", input, undefined, init);
   }
 
   headJson<TResponse, TErr = unknown>(
     input: RequestInfo | URL,
     init?: JsonGetInit,
-  ): Promise<JsonOf<TResponse, HttpErr<TErr>>> {
+  ): Promise<JsonOf<TResponse>> {
     return this.requestAsJson<TResponse, TErr>("HEAD", input, undefined, init);
   }
 
   deleteJson<TResponse, TErr = unknown>(
     input: RequestInfo | URL,
     init?: JsonGetInit,
-  ): Promise<JsonOf<TResponse, HttpErr<TErr>>> {
+  ): Promise<JsonOf<TResponse>> {
     return this.requestAsJson<TResponse, TErr>("DELETE", input, undefined, init);
   }
 
@@ -128,7 +123,7 @@ export class ApiBase {
     input: RequestInfo | URL,
     body: TBody,
     init?: JsonVerbInit,
-  ): Promise<JsonOf<TResponse, HttpErr<TErr>>> {
+  ): Promise<JsonOf<TResponse>> {
     return this.requestAsJson<TResponse, TErr>("POST", input, body, init);
   }
 
@@ -136,7 +131,7 @@ export class ApiBase {
     input: RequestInfo | URL,
     body: TBody,
     init?: JsonVerbInit,
-  ): Promise<JsonOf<TResponse, HttpErr<TErr>>> {
+  ): Promise<JsonOf<TResponse>> {
     return this.requestAsJson<TResponse, TErr>("PUT", input, body, init);
   }
 
@@ -144,7 +139,7 @@ export class ApiBase {
     input: RequestInfo | URL,
     body: TBody,
     init?: JsonVerbInit,
-  ): Promise<JsonOf<TResponse, HttpErr<TErr>>> {
+  ): Promise<JsonOf<TResponse>> {
     return this.requestAsJson<TResponse, TErr>("PATCH", input, body, init);
   }
 
@@ -287,7 +282,7 @@ export class ApiBase {
     input: RequestInfo | URL,
     body?: unknown,
     init?: JsonVerbInit,
-  ): Promise<JsonOf<TResponse, HttpErr<TErr>>> {
+  ): Promise<JsonOf<TResponse>> {
     const payload = body === undefined ? undefined : JSON.stringify(body);
     try {
       const response = await this.request(method, input, init, payload);
@@ -296,11 +291,9 @@ export class ApiBase {
         const data = parsed.tag === "Ok" ? parsed.data : undefined;
         return Json.Err({ status: response.status, data });
       }
-      return jsonOf<TResponse>(response) as Promise<
-        JsonOf<TResponse, HttpErr<TErr>>
-      >;
+      return jsonOf<TResponse>(response);
     } catch (err) {
-      return Json.Err(err) as JsonOf<TResponse, HttpErr<TErr>>;
+      return Json.Err(err);
     }
   }
 }

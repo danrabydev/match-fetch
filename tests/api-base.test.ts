@@ -2,7 +2,6 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   ApiBase,
   type FetchResult,
-  type HttpErr,
   type Json,
   type Transport,
 } from "../src/index.js";
@@ -105,7 +104,7 @@ describe("ApiBase", () => {
       fetch: async () => jsonResponse(200, { id: "1", name: "ada" }),
     });
     const result = await api.getJson<User>("/users/1");
-    expectTypeOf(result).toEqualTypeOf<Json<User, HttpErr>>();
+    expectTypeOf(result).toEqualTypeOf<Json<User>>();
     expect(result.tag).toBe("Ok");
     if (result.tag === "Ok") {
       expectTypeOf(result.data).toEqualTypeOf<User>();

@@ -249,9 +249,12 @@ describe("getJson / postJson", () => {
       fetch: fetchReturning(jsonResponse(500, { error: "boom" })),
     });
     expect(result.tag).toBe("Err");
-    if (result.tag === "Err" && isHttpErr<{ error: string }>(result.err)) {
-      expect(result.err.status).toBe(500);
-      expect(result.err.data).toEqual({ error: "boom" });
+    if (result.tag === "Err") {
+      expect(isHttpErr(result.err)).toBe(true);
+      if (isHttpErr<{ error: string }>(result.err)) {
+        expect(result.err.status).toBe(500);
+        expect(result.err.data).toEqual({ error: "boom" });
+      }
     }
   });
 
@@ -260,9 +263,12 @@ describe("getJson / postJson", () => {
       fetch: async () => new Response("nope", { status: 404 }),
     });
     expect(result.tag).toBe("Err");
-    if (result.tag === "Err" && isHttpErr(result.err)) {
-      expect(result.err.status).toBe(404);
-      expect(result.err.data).toBeUndefined();
+    if (result.tag === "Err") {
+      expect(isHttpErr(result.err)).toBe(true);
+      if (isHttpErr(result.err)) {
+        expect(result.err.status).toBe(404);
+        expect(result.err.data).toBeUndefined();
+      }
     }
   });
 
@@ -285,6 +291,9 @@ describe("getJson / postJson", () => {
       fetch: fetchReturning(new Response("not json", { status: 200 })),
     });
     expect(result.tag).toBe("Err");
+    if (result.tag === "Err") {
+      expect(isHttpErr(result.err)).toBe(false);
+    }
   });
 
   it("maps an empty 204 body to Err", async () => {
@@ -292,6 +301,9 @@ describe("getJson / postJson", () => {
       fetch: async () => new Response(null, { status: 204 }),
     });
     expect(result.tag).toBe("Err");
+    if (result.tag === "Err") {
+      expect(isHttpErr(result.err)).toBe(false);
+    }
   });
 
   it("POSTs JSON body and only requires Ok/Err arms", async () => {

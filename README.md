@@ -183,7 +183,7 @@ const body = await jsonOf<ApiError>(response);
 | Need | What you get |
 | --- | --- |
 | Typed JSON client | `get<User>` → `FetchResult<User>`; `data` is `User` on 200/201 |
-| Ok / Err only (data already parsed) | `getJson<User>` → `Json<User>` |
+| Ok / Err only (data already parsed) | `getJson<User, ApiError>` → `Json<User>`; HTTP `Err` is `{ status, data }` (`isHttpErr`) |
 | Shared defaults | `class UserApi extends ApiBase` |
 | Exhaustive HTTP status | named 200/201/204/409, then 4xx/5xx ranges |
 | Network vs HTTP | `NetworkError` is a variant, not a thrown `TypeError` |

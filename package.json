@@ -1,6 +1,6 @@
 {
   "name": "@danrabydev/match-fetch",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Fetch wrapper with exhaustive matchables for transport, HTTP status, and JSON",
   "type": "module",
   "main": "./dist/index.cjs",

@@ -50,48 +50,48 @@ export function patch<TBody, TResponse>(
   return standalone.patch<TBody, TResponse>(input, body, init);
 }
 
-export function getJson<TResponse>(
+export function getJson<TResponse, TErr = unknown>(
   input: RequestInfo | URL,
   init?: JsonGetInit,
 ): Promise<Json<TResponse>> {
-  return standalone.getJson<TResponse>(input, init);
+  return standalone.getJson<TResponse, TErr>(input, init);
 }
 
-export function headJson<TResponse>(
+export function headJson<TResponse, TErr = unknown>(
   input: RequestInfo | URL,
   init?: JsonGetInit,
 ): Promise<Json<TResponse>> {
-  return standalone.headJson<TResponse>(input, init);
+  return standalone.headJson<TResponse, TErr>(input, init);
 }
 
 /** Free-function DELETE JSON (`deleteJson` on the class; `delete` is reserved). */
-export function delJson<TResponse>(
+export function delJson<TResponse, TErr = unknown>(
   input: RequestInfo | URL,
   init?: JsonGetInit,
 ): Promise<Json<TResponse>> {
-  return standalone.deleteJson<TResponse>(input, init);
+  return standalone.deleteJson<TResponse, TErr>(input, init);
 }
 
-export function postJson<TBody, TResponse>(
+export function postJson<TBody, TResponse, TErr = unknown>(
   input: RequestInfo | URL,
   body: TBody,
   init?: JsonVerbInit,
 ): Promise<Json<TResponse>> {
-  return standalone.postJson<TBody, TResponse>(input, body, init);
+  return standalone.postJson<TBody, TResponse, TErr>(input, body, init);
 }
 
-export function putJson<TBody, TResponse>(
+export function putJson<TBody, TResponse, TErr = unknown>(
   input: RequestInfo | URL,
   body: TBody,
   init?: JsonVerbInit,
 ): Promise<Json<TResponse>> {
-  return standalone.putJson<TBody, TResponse>(input, body, init);
+  return standalone.putJson<TBody, TResponse, TErr>(input, body, init);
 }
 
-export function patchJson<TBody, TResponse>(
+export function patchJson<TBody, TResponse, TErr = unknown>(
   input: RequestInfo | URL,
   body: TBody,
   init?: JsonVerbInit,
 ): Promise<Json<TResponse>> {
-  return standalone.patchJson<TBody, TResponse>(input, body, init);
+  return standalone.patchJson<TBody, TResponse, TErr>(input, body, init);
 }

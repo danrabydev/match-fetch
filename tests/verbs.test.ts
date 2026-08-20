@@ -122,22 +122,21 @@ describe("get / FetchResult", () => {
       });
     };
     check(FetchResult.Ok({ id: "1", name: "ada" }));
+  });
 
-    const rejectNonUnion = () => {
-      // @ts-expect-error value must be a FetchResult
-      FetchResult.match(0, {
-        Ok: () => "",
-        Created: () => "",
-        NoContent: () => "",
-        Conflict: () => "",
-        ClientError: () => "",
-        ServerError: () => "",
-        Other: () => "",
-        NetworkError: () => "",
-        ParseError: () => "",
-      });
-    };
-    void rejectNonUnion;
+  it("narrows constructor results to that arm; extra arms are allowed", () => {
+    const ok = FetchResult.Ok({ id: "1", name: "ada" });
+    expectTypeOf(ok).toEqualTypeOf<{ tag: "Ok"; data: User }>();
+    const name = FetchResult.match(ok, {
+      Ok: ({ data }) => data.name,
+    });
+    expectTypeOf(name).toEqualTypeOf<string>();
+    expect(name).toBe("ada");
+
+    FetchResult.match(ok, {
+      Ok: ({ data }) => data.name,
+      ParseError: () => "",
+    });
   });
 });
 

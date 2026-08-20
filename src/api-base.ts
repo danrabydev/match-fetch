@@ -1,5 +1,9 @@
 import { toFetchResult, type FetchResult } from "./result.js";
-import { matchFetch, type MatchFetchInit, type Transport } from "./transport.js";
+import {
+  splitInit,
+  Transport,
+  type MatchFetchInit,
+} from "./transport.js";
 
 export type ApiBaseOptions = MatchFetchInit & {
   baseUrl?: string;
@@ -93,13 +97,79 @@ export class ApiBase {
     return this.requestJson<TResponse>("PATCH", input, body, init);
   }
 
-  /** Raw `Response` path for non-JSON (FormData, streams, custom status tables). */
-  protected matchFetch(
+  /**
+   * Native `fetch` with merged defaults. Throws on network/abort.
+   * 4th argument is already-`JSON.stringify`'d JSON and sets
+   * `Content-Type: application/json` when unset. FormData/streams: `init.body`.
+   */
+  protected request(
+    method: string,
+    input: RequestInfo | URL,
+    init?: JsonVerbInit,
+    body?: string,
+  ): Promise<Response> {
+    const merged = this.mergeInit(method, init, body);
+    const { fetch: fetchFn, requestInit } = splitInit(merged);
+    return fetchFn(this.resolveUrl(input), requestInit);
+  }
+
+  protected requestGet(
+    input: RequestInfo | URL,
+    init?: JsonGetInit,
+  ): Promise<Response> {
+    return this.request("GET", input, init);
+  }
+
+  protected requestHead(
+    input: RequestInfo | URL,
+    init?: JsonGetInit,
+  ): Promise<Response> {
+    return this.request("HEAD", input, init);
+  }
+
+  protected requestDelete(
+    input: RequestInfo | URL,
+    init?: JsonGetInit,
+  ): Promise<Response> {
+    return this.request("DELETE", input, init);
+  }
+
+  protected requestPost<TBody>(
+    input: RequestInfo | URL,
+    body: TBody,
+    init?: JsonVerbInit,
+  ): Promise<Response> {
+    return this.request("POST", input, init, JSON.stringify(body));
+  }
+
+  protected requestPut<TBody>(
+    input: RequestInfo | URL,
+    body: TBody,
+    init?: JsonVerbInit,
+  ): Promise<Response> {
+    return this.request("PUT", input, init, JSON.stringify(body));
+  }
+
+  protected requestPatch<TBody>(
+    input: RequestInfo | URL,
+    body: TBody,
+    init?: JsonVerbInit,
+  ): Promise<Response> {
+    return this.request("PATCH", input, init, JSON.stringify(body));
+  }
+
+  /** HTTP 404 is still `Ok`. Does not throw; network failures are `Err`. */
+  protected async matchFetch(
     input: RequestInfo | URL,
     init?: MatchFetchInit,
   ): Promise<Transport> {
     const method = init?.method ?? "GET";
-    return matchFetch(this.resolveUrl(input), this.mergeInit(method, init));
+    try {
+      const response = await this.request(method, input, init);
+      return Transport.Ok(response);
+    } catch (err) {
+      return Transport.Err(err);
+    }
   }
 
   protected resolveUrl(input: RequestInfo | URL): RequestInfo | URL {
@@ -153,8 +223,11 @@ export class ApiBase {
     init?: JsonVerbInit,
   ): Promise<FetchResult<TResponse>> {
     const payload = body === undefined ? undefined : JSON.stringify(body);
-    const merged = this.mergeInit(method, init, payload);
-    const attempt = await matchFetch(this.resolveUrl(input), merged);
-    return toFetchResult<TResponse>(attempt);
+    try {
+      const response = await this.request(method, input, init, payload);
+      return toFetchResult<TResponse>(Transport.Ok(response));
+    } catch (err) {
+      return toFetchResult<TResponse>(Transport.Err(err));
+    }
   }
 }

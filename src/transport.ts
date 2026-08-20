@@ -15,7 +15,7 @@ export type Transport =
 
 type TransportCtors = {
   Ok: (response: Response) => { tag: "Ok"; response: Response };
-  Err: (err: unknown) => { tag: "Err"; err: unknown };
+  Err: <E>(err: E) => { tag: "Err"; err: E };
 };
 
 export const Transport = createMatchable({
@@ -23,7 +23,7 @@ export const Transport = createMatchable({
   Err: (err: unknown) => ({ err }),
 }) as unknown as MatchableNamespace<Transport, TransportCtors>;
 
-function splitInit(init?: MatchFetchInit): {
+export function splitInit(init?: MatchFetchInit): {
   fetch: typeof globalThis.fetch;
   requestInit: RequestInit;
 } {

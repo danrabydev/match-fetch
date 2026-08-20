@@ -144,7 +144,7 @@ const ApiHttp = createStatusMatchable({
 });
 ```
 
-Range names `ClientError`, `ServerError`, and `Other` are reserved, as is `of` (the mapper). Duplicate status codes throw at creation.
+Range names `ClientError`, `ServerError`, and `Other` are reserved, as are `of` (the mapper) and `merge` (`createMatchable` reserves it). Duplicate status codes throw at creation.
 
 ### `jsonOf`
 
@@ -156,7 +156,7 @@ import { jsonOf } from "@danrabydev/match-fetch";
 const body = await jsonOf<ApiError>(response);
 ```
 
-`ApiBase` exposes `protected matchFetch` for FormData, streams, or a custom status table, and `protected requestJson` / exported `toFetchResult` for the default JSON pipeline (including `DELETE`).
+`ApiBase` exposes `protected request` / `requestGet` / `requestHead` / `requestDelete` / `requestPost` / `requestPut` / `requestPatch` for native `Response` (throws on network/abort — call these internally when you do not want a matchable). `protected matchFetch` wraps that in `Transport`. `protected requestJson` / exported `toFetchResult` are the default JSON pipeline (including `DELETE`).
 
 ## Why this pattern
 

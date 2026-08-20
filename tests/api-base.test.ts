@@ -14,6 +14,18 @@ class Probe extends ApiBase {
   raw(input: RequestInfo | URL, init?: Parameters<ApiBase["get"]>[1]) {
     return this.matchFetch(input, init);
   }
+
+  nativeGet(input: RequestInfo | URL, init?: Parameters<ApiBase["get"]>[1]) {
+    return this.requestGet(input, init);
+  }
+
+  nativePost<TBody>(
+    input: RequestInfo | URL,
+    body: TBody,
+    init?: Parameters<ApiBase["post"]>[2],
+  ) {
+    return this.requestPost(input, body, init);
+  }
 }
 
 describe("ApiBase", () => {
@@ -94,6 +106,38 @@ describe("ApiBase", () => {
     const result = await api.user("1");
     expectTypeOf(result).toEqualTypeOf<FetchResult<User>>();
     expect(result.tag).toBe("Ok");
+  });
+
+  it("requestGet / requestPost return Response and throw on network", async () => {
+    const api = new Probe({
+      fetch: async (_input, init) => {
+        expect(init?.method).toBe("GET");
+        return jsonResponse(200, { id: "1", name: "ada" });
+      },
+    });
+    const response = await api.nativeGet("/users/1");
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ id: "1", name: "ada" });
+
+    let posted: string | undefined;
+    const poster = new Probe({
+      fetch: async (_input, init) => {
+        posted = String(init?.body);
+        expect(init?.method).toBe("POST");
+        return jsonResponse(201, { id: "1", name: "ada" });
+      },
+    });
+    const created = await poster.nativePost("/users", { name: "ada" });
+    expect(posted).toBe(JSON.stringify({ name: "ada" }));
+    expect(created.status).toBe(201);
+
+    const failing = new Probe({
+      fetch: async () => {
+        throw new TypeError("offline");
+      },
+    });
+    await expect(failing.nativeGet("/users/1")).rejects.toThrow("offline");
   });
 
   it("protected matchFetch returns Transport", async () => {

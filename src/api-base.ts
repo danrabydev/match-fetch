@@ -286,6 +286,7 @@ export class ApiBase {
     const payload = body === undefined ? undefined : JSON.stringify(body);
     try {
       const response = await this.request(method, input, init, payload);
+      if (!response.ok) return Json.Err(response);
       return jsonOf<TResponse>(response);
     } catch (err) {
       return Json.Err(err);

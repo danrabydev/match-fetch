@@ -55,7 +55,7 @@ Omit an arm and TypeScript reports an error.
 
 ## Simple `Json` path — `getJson`
 
-Same request, body read immediately into `Ok.data`. Two arms only. HTTP status is not matched (404 JSON is still `Ok`). Empty bodies (204 DELETE, HEAD) are parse `Err` — use `del` / `matchFetch` when there is no JSON.
+Same request, body read immediately into `Ok.data`. Two arms only. `response.ok` (2xx) + JSON is `Ok`; 4xx/5xx are `Err` with the `Response` (`err instanceof Response`). Empty 2xx bodies (204, HEAD) are parse `Err` — use `del` / `matchFetch` when there is no JSON.
 
 ```ts
 import { getJson, Json } from "@danrabydev/match-fetch";
@@ -65,7 +65,8 @@ type User = { id: string; name: string };
 const result = await getJson<User>("/users/1");
 const name = Json.match(result, {
   Ok: ({ data }) => data.name, // data: User
-  Err: ({ err }) => String(err), // network or parse
+  Err: ({ err }) =>
+    err instanceof Response ? `http ${err.status}` : String(err),
 });
 ```
 
@@ -166,7 +167,7 @@ Range names `ClientError`, `ServerError`, and `Other` are reserved, as are `of` 
 
 ### `jsonOf`
 
-`response.json()` without throwing. `getJson` / `requestAsJson` call this for every status (`Json.Ok` / `Json.Err`). Status-table `get` / `requestJson` still parse only 200/201 into `FetchResult`. Use it in a `Conflict` / `ClientError` arm to parse an error body:
+`response.json()` without throwing. `getJson` calls this on 2xx only (`!ok` is `Json.Err(response)`). Status-table `get` still parses 200/201 into `FetchResult`. Use it in an `Err` / 4xx arm to parse an error body:
 
 ```ts
 import { jsonOf } from "@danrabydev/match-fetch";

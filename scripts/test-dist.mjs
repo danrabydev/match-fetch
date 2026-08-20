@@ -20,6 +20,7 @@ function assert(cond, message) {
 function smoke(api, label) {
   assert(typeof api.matchFetch === "function", `${label}: matchFetch`);
   assert(typeof api.get === "function", `${label}: get`);
+  assert(typeof api.getJson === "function", `${label}: getJson`);
   assert(typeof api.post === "function", `${label}: post`);
   assert(typeof api.del === "function", `${label}: del`);
   assert(typeof api.head === "function", `${label}: head`);

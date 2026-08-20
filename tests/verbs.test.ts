@@ -1,5 +1,16 @@
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
-import { del, FetchResult, get, head, patch, post, put } from "../src/index.js";
+import {
+  del,
+  FetchResult,
+  get,
+  getJson,
+  head,
+  Json,
+  patch,
+  post,
+  postJson,
+  put,
+} from "../src/index.js";
 
 type User = { id: string; name: string };
 type NewUser = { name: string };
@@ -203,5 +214,79 @@ describe("del / head", () => {
     );
     await head<User>("/users/1", { fetch: fetchImpl });
     expect(methods).toEqual(["DELETE", "HEAD"]);
+  });
+});
+
+describe("getJson / postJson", () => {
+  it("parses 200 JSON as Ok with TResponse", async () => {
+    const result = await getJson<User>("/users/1", {
+      fetch: fetchReturning(jsonResponse(200, { id: "1", name: "ada" })),
+    });
+    expect(result.tag).toBe("Ok");
+    if (result.tag === "Ok") {
+      expect(result.data).toEqual({ id: "1", name: "ada" });
+      expectTypeOf(result.data).toEqualTypeOf<User>();
+    }
+  });
+
+  it("parses 404 JSON as Ok (status ignored)", async () => {
+    const result = await getJson<{ error: string }>("/users/1", {
+      fetch: fetchReturning(jsonResponse(404, { error: "nope" })),
+    });
+    expect(result.tag).toBe("Ok");
+    if (result.tag === "Ok") {
+      expect(result.data).toEqual({ error: "nope" });
+    }
+  });
+
+  it("maps fetch reject to Err", async () => {
+    const err = new TypeError("offline");
+    const result = await getJson<User>("/users/1", {
+      fetch: async () => {
+        throw err;
+      },
+    });
+    expect(result.tag).toBe("Err");
+    if (result.tag === "Err") {
+      expect(result.err).toBe(err);
+    }
+  });
+
+  it("maps invalid JSON to Err", async () => {
+    const result = await getJson<User>("/users/1", {
+      fetch: fetchReturning(new Response("not json", { status: 200 })),
+    });
+    expect(result.tag).toBe("Err");
+  });
+
+  it("maps an empty 204 body to Err", async () => {
+    const result = await getJson<User>("/users/1", {
+      fetch: async () => new Response(null, { status: 204 }),
+    });
+    expect(result.tag).toBe("Err");
+  });
+
+  it("POSTs JSON body and only requires Ok/Err arms", async () => {
+    let method: string | undefined;
+    let body: unknown;
+    const result = await postJson<NewUser, User>(
+      "/users",
+      { name: "ada" },
+      {
+        fetch: async (_req, init) => {
+          method = init?.method;
+          body = init?.body;
+          return jsonResponse(201, { id: "1", name: "ada" });
+        },
+      },
+    );
+    expect(method).toBe("POST");
+    expect(body).toBe(JSON.stringify({ name: "ada" }));
+    const name = Json.match(result, {
+      Ok: ({ data }) => data.name,
+      Err: () => "",
+    });
+    expectTypeOf(name).toEqualTypeOf<string>();
+    expect(name).toBe("ada");
   });
 });

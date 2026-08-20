@@ -7,3 +7,4 @@ Runnable, typechecked catalog of `@danrabydev/match-fetch`. `pnpm test` imports 
 | `UserApi extends ApiBase` | [`user-api.ts`](./user-api.ts) |
 | Typed `get<User>` / `post<NewUser, User>` | [`user-api.ts`](./user-api.ts) |
 | Exhaustive `FetchResult.match` | [`user-api.ts`](./user-api.ts) `handleUser` |
+| Two-arm `getJson` / `Json.match` | [`user-api.ts`](./user-api.ts) `userJson` / `handleUserJson` |

@@ -53,6 +53,22 @@ const name = FetchResult.match(await users.user("1"), {
 
 Omit an arm and TypeScript reports an error.
 
+## Simple `Json` path — `getJson`
+
+Same request, body read immediately into `Ok.data`. Two arms only. HTTP status is not matched (404 JSON is still `Ok`).
+
+```ts
+import { ApiBase, Json } from "@danrabydev/match-fetch";
+
+const result = await api.getJson<User>("/users/1");
+Json.match(result, {
+  Ok: ({ data }) => setUser(data), // data: User
+  Err: ({ err }) => setError(err), // network or parse throw
+});
+```
+
+`postJson` / `putJson` / `patchJson` take `<TBody, TResponse>` like `post`. Free functions: `getJson`, `headJson`, `delJson`, `postJson`, `putJson`, `patchJson`.
+
 ## Free verbs
 
 Same pipeline without a class. Useful in scripts and tests.
@@ -156,13 +172,14 @@ import { jsonOf } from "@danrabydev/match-fetch";
 const body = await jsonOf<ApiError>(response);
 ```
 
-`ApiBase` exposes `protected request` / `requestGet` / `requestHead` / `requestDelete` / `requestPost` / `requestPut` / `requestPatch` for native `Response` (throws on network/abort — call these internally when you do not want a matchable). `protected matchFetch` wraps that in `Transport`. `protected requestJson` / exported `toFetchResult` are the default JSON pipeline (including `DELETE`).
+`ApiBase` exposes `protected request` / `requestGet` / `requestHead` / `requestDelete` / `requestPost` / `requestPut` / `requestPatch` for native `Response` (throws on network/abort). `protected matchFetch` wraps that in `Transport` (body unread). `protected requestJson` / `get` are the status-table JSON pipeline. `protected requestAsJson` / `getJson` parse immediately into `Json` (`Ok`/`Err`).
 
 ## Why this pattern
 
 | Need | What you get |
 | --- | --- |
 | Typed JSON client | `get<User>` → `FetchResult<User>`; `data` is `User` on 200/201 |
+| Ok / Err only (data already parsed) | `getJson<User>` → `Json<User>` |
 | Shared defaults | `class UserApi extends ApiBase` |
 | Exhaustive HTTP status | named 200/201/204/409, then 4xx/5xx ranges |
 | Network vs HTTP | `NetworkError` is a variant, not a thrown `TypeError` |

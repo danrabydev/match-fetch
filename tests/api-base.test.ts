@@ -1,5 +1,10 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { ApiBase, type FetchResult, type Transport } from "../src/index.js";
+import {
+  ApiBase,
+  type FetchResult,
+  type Json,
+  type Transport,
+} from "../src/index.js";
 
 type User = { id: string; name: string };
 
@@ -92,6 +97,19 @@ describe("ApiBase", () => {
     await api.get<User>("/a");
     await api.get<User>("/b", { fetch: requestFetch });
     expect(used).toEqual(["default", "request"]);
+  });
+
+  it("getJson returns Json with data already parsed", async () => {
+    const api = new ApiBase({
+      fetch: async () => jsonResponse(200, { id: "1", name: "ada" }),
+    });
+    const result = await api.getJson<User>("/users/1");
+    expectTypeOf(result).toEqualTypeOf<Json<User>>();
+    expect(result.tag).toBe("Ok");
+    if (result.tag === "Ok") {
+      expectTypeOf(result.data).toEqualTypeOf<User>();
+      expect(result.data.name).toBe("ada");
+    }
   });
 
   it("subclass methods return Promise<FetchResult<User>>", async () => {

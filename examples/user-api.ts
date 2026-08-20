@@ -5,7 +5,9 @@
 import {
   ApiBase,
   FetchResult,
+  Json,
   type FetchResult as FetchResultOf,
+  type Json as JsonOf,
 } from "../src/index.js";
 
 export type User = { id: string; name: string };
@@ -23,6 +25,10 @@ export class UserApi extends ApiBase {
   raw(path: string) {
     return this.matchFetch(path);
   }
+
+  userJson(id: string) {
+    return this.getJson<User>(`/users/${id}`);
+  }
 }
 
 export function handleUser(result: FetchResultOf<User>): string {
@@ -36,6 +42,13 @@ export function handleUser(result: FetchResultOf<User>): string {
     Other: ({ status }) => `other ${status}`,
     NetworkError: ({ err }) => `network: ${String(err)}`,
     ParseError: ({ err }) => `parse: ${String(err)}`,
+  });
+}
+
+export function handleUserJson(result: JsonOf<User>): string {
+  return Json.match(result, {
+    Ok: ({ data }) => data.name,
+    Err: ({ err }) => `err: ${String(err)}`,
   });
 }
 

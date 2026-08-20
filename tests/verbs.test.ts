@@ -259,6 +259,13 @@ describe("getJson / postJson", () => {
     expect(result.tag).toBe("Err");
   });
 
+  it("maps an empty 204 body to Err", async () => {
+    const result = await getJson<User>("/users/1", {
+      fetch: async () => new Response(null, { status: 204 }),
+    });
+    expect(result.tag).toBe("Err");
+  });
+
   it("POSTs JSON body and only requires Ok/Err arms", async () => {
     let method: string | undefined;
     let body: unknown;

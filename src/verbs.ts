@@ -64,6 +64,7 @@ export function headJson<TResponse>(
   return standalone.headJson<TResponse>(input, init);
 }
 
+/** Free-function DELETE JSON (`deleteJson` on the class; `delete` is reserved). */
 export function delJson<TResponse>(
   input: RequestInfo | URL,
   init?: JsonGetInit,

@@ -55,19 +55,21 @@ Omit an arm and TypeScript reports an error.
 
 ## Simple `Json` path — `getJson`
 
-Same request, body read immediately into `Ok.data`. Two arms only. HTTP status is not matched (404 JSON is still `Ok`).
+Same request, body read immediately into `Ok.data`. Two arms only. HTTP status is not matched (404 JSON is still `Ok`). Empty bodies (204 DELETE, HEAD) are parse `Err` — use `del` / `matchFetch` when there is no JSON.
 
 ```ts
-import { ApiBase, Json } from "@danrabydev/match-fetch";
+import { getJson, Json } from "@danrabydev/match-fetch";
 
-const result = await api.getJson<User>("/users/1");
-Json.match(result, {
-  Ok: ({ data }) => setUser(data), // data: User
-  Err: ({ err }) => setError(err), // network or parse throw
+type User = { id: string; name: string };
+
+const result = await getJson<User>("/users/1");
+const name = Json.match(result, {
+  Ok: ({ data }) => data.name, // data: User
+  Err: ({ err }) => String(err), // network or parse
 });
 ```
 
-`postJson` / `putJson` / `patchJson` take `<TBody, TResponse>` like `post`. Free functions: `getJson`, `headJson`, `delJson`, `postJson`, `putJson`, `patchJson`.
+`postJson` / `putJson` / `patchJson` take `<TBody, TResponse>` like `post`. Class methods: `getJson`, `headJson`, `deleteJson`, `postJson`, `putJson`, `patchJson`. Free functions use `delJson` (`delete` is reserved). `headJson` is almost always `Err` on a spec HEAD; use `matchFetch` for headers.
 
 ## Free verbs
 
@@ -164,7 +166,7 @@ Range names `ClientError`, `ServerError`, and `Other` are reserved, as are `of` 
 
 ### `jsonOf`
 
-`response.json()` without throwing. JSON verbs use this on 200/201 (`Ok`/`Created` or `ParseError`). Use it in a `Conflict` / `ClientError` arm to parse an error body:
+`response.json()` without throwing. `getJson` / `requestAsJson` call this for every status (`Json.Ok` / `Json.Err`). Status-table `get` / `requestJson` still parse only 200/201 into `FetchResult`. Use it in a `Conflict` / `ClientError` arm to parse an error body:
 
 ```ts
 import { jsonOf } from "@danrabydev/match-fetch";

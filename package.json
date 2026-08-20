@@ -1,0 +1,67 @@
+{
+  "name": "@danrabydev/match-fetch",
+  "version": "0.1.0",
+  "description": "Fetch wrapper with exhaustive matchables for transport, HTTP status, and JSON",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:dist": "node scripts/test-dist.mjs",
+    "lint:package": "publint && attw --pack .",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm typecheck && pnpm test && pnpm build && pnpm test:dist && pnpm lint:package",
+    "prepublishOnly": "pnpm check",
+    "publish:npm": "npm publish --access public --provenance"
+  },
+  "keywords": [
+    "typescript",
+    "fetch",
+    "match",
+    "tagged-union",
+    "http",
+    "result"
+  ],
+  "author": "Dan Raby / danrabydev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://origin.cursor.com/git/danrabydev/match-fetch.git"
+  },
+  "homepage": "https://origin.cursor.com/git/danrabydev/match-fetch",
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "pnpm@10.33.3",
+  "dependencies": {
+    "@danrabydev/match": "^0.1.0"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@types/node": "^26.2.0",
+    "publint": "^0.3.24",
+    "tsdown": "^0.22.14",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
+  }
+}

@@ -229,13 +229,24 @@ describe("getJson / postJson", () => {
     }
   });
 
-  it("parses 404 JSON as Ok (status ignored)", async () => {
-    const result = await getJson<{ error: string }>("/users/1", {
+  it("maps 404 to Err with the Response", async () => {
+    const result = await getJson<User>("/users/1", {
       fetch: fetchReturning(jsonResponse(404, { error: "nope" })),
     });
-    expect(result.tag).toBe("Ok");
-    if (result.tag === "Ok") {
-      expect(result.data).toEqual({ error: "nope" });
+    expect(result.tag).toBe("Err");
+    if (result.tag === "Err") {
+      expect(result.err).toBeInstanceOf(Response);
+      expect((result.err as Response).status).toBe(404);
+    }
+  });
+
+  it("maps 500 to Err with the Response", async () => {
+    const result = await getJson<User>("/users/1", {
+      fetch: fetchReturning(jsonResponse(500, { error: "boom" })),
+    });
+    expect(result.tag).toBe("Err");
+    if (result.tag === "Err") {
+      expect((result.err as Response).status).toBe(500);
     }
   });
 

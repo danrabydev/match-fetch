@@ -48,7 +48,8 @@ export function handleUser(result: FetchResultOf<User>): string {
 export function handleUserJson(result: JsonOf<User>): string {
   return Json.match(result, {
     Ok: ({ data }) => data.name,
-    Err: ({ err }) => `err: ${String(err)}`,
+    Err: ({ err }) =>
+      err instanceof Response ? `http ${err.status}` : `err: ${String(err)}`,
   });
 }
 

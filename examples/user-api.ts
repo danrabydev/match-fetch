@@ -6,6 +6,7 @@ import {
   ApiBase,
   FetchResult,
   Json,
+  isHttpErr,
   type FetchResult as FetchResultOf,
   type Json as JsonOf,
 } from "../src/index.js";
@@ -49,7 +50,7 @@ export function handleUserJson(result: JsonOf<User>): string {
   return Json.match(result, {
     Ok: ({ data }) => data.name,
     Err: ({ err }) =>
-      err instanceof Response ? `http ${err.status}` : `err: ${String(err)}`,
+      isHttpErr(err) ? `http ${err.status}` : `err: ${String(err)}`,
   });
 }
 

@@ -5,6 +5,7 @@ import {
   get,
   getJson,
   head,
+  isHttpErr,
   Json,
   patch,
   post,
@@ -229,24 +230,39 @@ describe("getJson / postJson", () => {
     }
   });
 
-  it("maps 404 to Err with the Response", async () => {
-    const result = await getJson<User>("/users/1", {
+  it("maps 404 JSON to Err { status, data }", async () => {
+    const result = await getJson<User, { error: string }>("/users/1", {
       fetch: fetchReturning(jsonResponse(404, { error: "nope" })),
     });
     expect(result.tag).toBe("Err");
     if (result.tag === "Err") {
-      expect(result.err).toBeInstanceOf(Response);
-      expect((result.err as Response).status).toBe(404);
+      expect(isHttpErr(result.err)).toBe(true);
+      if (isHttpErr<{ error: string }>(result.err)) {
+        expect(result.err.status).toBe(404);
+        expect(result.err.data).toEqual({ error: "nope" });
+      }
     }
   });
 
-  it("maps 500 to Err with the Response", async () => {
-    const result = await getJson<User>("/users/1", {
+  it("maps 500 JSON to Err { status, data }", async () => {
+    const result = await getJson<User, { error: string }>("/users/1", {
       fetch: fetchReturning(jsonResponse(500, { error: "boom" })),
     });
     expect(result.tag).toBe("Err");
-    if (result.tag === "Err") {
-      expect((result.err as Response).status).toBe(500);
+    if (result.tag === "Err" && isHttpErr<{ error: string }>(result.err)) {
+      expect(result.err.status).toBe(500);
+      expect(result.err.data).toEqual({ error: "boom" });
+    }
+  });
+
+  it("maps non-JSON 404 to Err with undefined data", async () => {
+    const result = await getJson<User>("/users/1", {
+      fetch: async () => new Response("nope", { status: 404 }),
+    });
+    expect(result.tag).toBe("Err");
+    if (result.tag === "Err" && isHttpErr(result.err)) {
+      expect(result.err.status).toBe(404);
+      expect(result.err.data).toBeUndefined();
     }
   });
 
@@ -260,6 +276,7 @@ describe("getJson / postJson", () => {
     expect(result.tag).toBe("Err");
     if (result.tag === "Err") {
       expect(result.err).toBe(err);
+      expect(isHttpErr(result.err)).toBe(false);
     }
   });
 

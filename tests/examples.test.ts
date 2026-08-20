@@ -5,7 +5,7 @@ import {
   handleUserJson,
   type User,
 } from "../examples/user-api.js";
-import type { FetchResult, Json } from "../src/index.js";
+import type { FetchResult, HttpErr, Json } from "../src/index.js";
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -53,7 +53,7 @@ describe("examples/user-api", () => {
       jsonResponse(200, { id: "1", name: "ada" }),
     );
     const result = await api.userJson("1");
-    expectTypeOf(result).toEqualTypeOf<Json<User>>();
+    expectTypeOf(result).toEqualTypeOf<Json<User, HttpErr>>();
     expect(handleUserJson(result)).toBe("ada");
   });
 });

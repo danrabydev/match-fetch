@@ -6,7 +6,7 @@ export {
   type StatusValue,
 } from "./status.js";
 
-export { Json, jsonOf } from "./json.js";
+export { Json, jsonOf, isHttpErr, type HttpErr } from "./json.js";
 
 export { FetchResult, toFetchResult } from "./result.js";
 

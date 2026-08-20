@@ -1,13 +1,19 @@
 import { createMatchable } from "@danrabydev/match";
 import type { BoundMatch } from "./namespace.js";
 
-type ReservedVariantName = "ClientError" | "ServerError" | "Other" | "of";
+type ReservedVariantName =
+  | "ClientError"
+  | "ServerError"
+  | "Other"
+  | "of"
+  | "merge";
 
 const RESERVED_VARIANT_NAME_SET = new Set<string>([
   "ClientError",
   "ServerError",
   "Other",
   "of",
+  "merge",
 ]);
 
 type ForbidReservedKeys<Codes> = [

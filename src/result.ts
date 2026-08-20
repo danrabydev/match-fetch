@@ -31,8 +31,8 @@ type FetchResultCtors = {
   Other: (
     response: Response,
   ) => { tag: "Other"; response: Response; status: number };
-  NetworkError: (err: unknown) => { tag: "NetworkError"; err: unknown };
-  ParseError: (err: unknown) => { tag: "ParseError"; err: unknown };
+  NetworkError: <E>(err: E) => { tag: "NetworkError"; err: E };
+  ParseError: <E>(err: E) => { tag: "ParseError"; err: E };
 };
 
 export const FetchResult = createMatchable({
@@ -58,8 +58,8 @@ async function parseJson<TData>(
   wrap: (data: TData) => FetchResult<TData>,
 ): Promise<FetchResult<TData>> {
   return Json.match(await jsonOf<TData>(response), {
-    Ok: ({ data }) => wrap(data),
-    Err: ({ err }) => FetchResult.ParseError(err) as FetchResult<TData>,
+    Ok: ({ data }): FetchResult<TData> => wrap(data),
+    Err: ({ err }): FetchResult<TData> => FetchResult.ParseError(err),
   });
 }
 
@@ -67,19 +67,20 @@ async function fromResponse<TData>(
   response: Response,
 ): Promise<FetchResult<TData>> {
   return Http.match(Http.of(response), {
-    Ok: ({ response: res }) =>
-      parseJson(res, (data) => FetchResult.Ok(data) as FetchResult<TData>),
-    Created: ({ response: res }) =>
-      parseJson(res, (data) => FetchResult.Created(data) as FetchResult<TData>),
-    NoContent: () => Promise.resolve(FetchResult.NoContent() as FetchResult<TData>),
-    Conflict: ({ response: res }) =>
-      Promise.resolve(FetchResult.Conflict(res) as FetchResult<TData>),
-    ClientError: ({ response: res }) =>
-      Promise.resolve(FetchResult.ClientError(res) as FetchResult<TData>),
-    ServerError: ({ response: res }) =>
-      Promise.resolve(FetchResult.ServerError(res) as FetchResult<TData>),
-    Other: ({ response: res }) =>
-      Promise.resolve(FetchResult.Other(res) as FetchResult<TData>),
+    Ok: ({ response: res }): Promise<FetchResult<TData>> =>
+      parseJson(res, (data) => FetchResult.Ok(data)),
+    Created: ({ response: res }): Promise<FetchResult<TData>> =>
+      parseJson(res, (data) => FetchResult.Created(data)),
+    NoContent: (): Promise<FetchResult<TData>> =>
+      Promise.resolve(FetchResult.NoContent()),
+    Conflict: ({ response: res }): Promise<FetchResult<TData>> =>
+      Promise.resolve(FetchResult.Conflict(res)),
+    ClientError: ({ response: res }): Promise<FetchResult<TData>> =>
+      Promise.resolve(FetchResult.ClientError(res)),
+    ServerError: ({ response: res }): Promise<FetchResult<TData>> =>
+      Promise.resolve(FetchResult.ServerError(res)),
+    Other: ({ response: res }): Promise<FetchResult<TData>> =>
+      Promise.resolve(FetchResult.Other(res)),
   });
 }
 
@@ -88,8 +89,9 @@ export async function toFetchResult<TData>(
   attempt: Transport,
 ): Promise<FetchResult<TData>> {
   return Transport.match(attempt, {
-    Err: ({ err }) =>
-      Promise.resolve(FetchResult.NetworkError(err) as FetchResult<TData>),
-    Ok: ({ response }) => fromResponse<TData>(response),
+    Err: ({ err }): Promise<FetchResult<TData>> =>
+      Promise.resolve(FetchResult.NetworkError(err)),
+    Ok: ({ response }): Promise<FetchResult<TData>> =>
+      fromResponse<TData>(response),
   });
 }

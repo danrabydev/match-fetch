@@ -54,7 +54,7 @@
   },
   "packageManager": "pnpm@10.33.3",
   "dependencies": {
-    "@danrabydev/match": "^0.1.0"
+    "@danrabydev/match": "^0.2.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

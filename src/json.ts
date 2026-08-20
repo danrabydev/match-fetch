@@ -7,7 +7,7 @@ export type Json<TData = unknown, TErr = unknown> =
 
 type JsonCtors = {
   Ok: <T>(data: T) => { tag: "Ok"; data: T };
-  Err: (err: unknown) => { tag: "Err"; err: unknown };
+  Err: <E>(err: E) => { tag: "Err"; err: E };
 };
 
 export const Json = createMatchable({
@@ -25,8 +25,8 @@ export async function jsonOf<TData = unknown>(
 ): Promise<Json<TData>> {
   try {
     const data = (await response.json()) as TData;
-    return Json.Ok(data) as Json<TData>;
+    return Json.Ok(data);
   } catch (err) {
-    return Json.Err(err) as Json<TData>;
+    return Json.Err(err);
   }
 }

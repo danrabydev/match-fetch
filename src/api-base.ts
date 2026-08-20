@@ -99,7 +99,8 @@ export class ApiBase {
 
   /**
    * Native `fetch` with merged defaults. Throws on network/abort.
-   * JSON verbs stringify `body`; pass a pre-encoded string for other payloads.
+   * 4th argument is already-`JSON.stringify`'d JSON and sets
+   * `Content-Type: application/json` when unset. FormData/streams: `init.body`.
    */
   protected request(
     method: string,
@@ -157,7 +158,7 @@ export class ApiBase {
     return this.request("PATCH", input, init, JSON.stringify(body));
   }
 
-  /** Transport matchable around `request`. HTTP 404 is still `Ok`. */
+  /** HTTP 404 is still `Ok`. Does not throw; network failures are `Err`. */
   protected async matchFetch(
     input: RequestInfo | URL,
     init?: MatchFetchInit,

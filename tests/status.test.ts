@@ -106,6 +106,13 @@ describe("createStatusMatchable", () => {
     ).toThrowError("reserved status variant name: merge");
   });
 
+  it("rejects merge at the type level", () => {
+    expect(() =>
+      // @ts-expect-error merge is reserved by createMatchable
+      createStatusMatchable({ merge: 200 }),
+    ).toThrowError("reserved status variant name: merge");
+  });
+
   it("requires every arm for a widened of() value", () => {
     const value = Http.of(res(200));
     const tag = Http.match(value, {

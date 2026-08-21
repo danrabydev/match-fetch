@@ -185,10 +185,11 @@ describe("ApiBase", () => {
     const api = new ApiBase({
       fetch: async () => jsonResponse(200, { id: "1", name: "ada" }),
     });
-    await api.get<User>("/users/1", {
+    const init: import("../src/api-base.js").JsonGetInit = {
       // @ts-expect-error method is fixed by the verb
       method: "DELETE",
-    });
+    };
+    await api.get<User>("/users/1", init);
   });
 
   it("protected requestJson lets a subclass send DELETE", async () => {

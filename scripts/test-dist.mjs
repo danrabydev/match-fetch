@@ -17,7 +17,7 @@ function assert(cond, message) {
   if (!cond) throw new Error(message);
 }
 
-function smoke(api, label) {
+async function smoke(api, label) {
   assert(typeof api.matchFetch === "function", `${label}: matchFetch`);
   assert(typeof api.get === "function", `${label}: get`);
   assert(typeof api.getJson === "function", `${label}: getJson`);
@@ -60,8 +60,25 @@ function smoke(api, label) {
 
   const notFound = api.Http.of(new Response(null, { status: 404 }));
   assert(notFound.tag === "ClientError", `${label}: Http.of 404`);
+
+  const urls = [];
+  const client = new api.ApiBase({
+    baseUrl: "https://{region}.example.com",
+    fetch: async (input) => {
+      urls.push(String(input));
+      return new Response(JSON.stringify({ id: "1" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+  });
+  await client.get("/users/{id}", { params: { region: "api", id: "1" } });
+  assert(
+    urls[0] === "https://api.example.com/users/1",
+    `${label}: url template substitution`,
+  );
 }
 
-smoke(esm, "esm");
-smoke(cjs, "cjs");
+await smoke(esm, "esm");
+await smoke(cjs, "cjs");
 console.log("dist smoke ok (esm + cjs)");

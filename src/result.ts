@@ -5,8 +5,8 @@ import { Http } from "./status.js";
 import { Transport } from "./transport.js";
 
 export type FetchResult<TData = unknown, TErr = unknown> =
-  | { tag: "Ok"; data: TData }
-  | { tag: "Created"; data: TData }
+  | { tag: "Ok"; body: TData }
+  | { tag: "Created"; body: TData }
   | { tag: "NoContent" }
   | { tag: "Conflict"; response: Response; status: 409 }
   | { tag: "ClientError"; response: Response; status: number }
@@ -16,8 +16,8 @@ export type FetchResult<TData = unknown, TErr = unknown> =
   | { tag: "ParseError"; err: TErr };
 
 type FetchResultCtors = {
-  Ok: <T>(data: T) => { tag: "Ok"; data: T };
-  Created: <T>(data: T) => { tag: "Created"; data: T };
+  Ok: <T>(body: T) => { tag: "Ok"; body: T };
+  Created: <T>(body: T) => { tag: "Created"; body: T };
   NoContent: () => { tag: "NoContent" };
   Conflict: (
     response: Response,
@@ -36,8 +36,8 @@ type FetchResultCtors = {
 };
 
 export const FetchResult = createMatchable({
-  Ok: (data: unknown) => ({ data }),
-  Created: (data: unknown) => ({ data }),
+  Ok: (body: unknown) => ({ body }),
+  Created: (body: unknown) => ({ body }),
   NoContent: () => ({}),
   Conflict: (response: Response) => ({ response, status: 409 as const }),
   ClientError: (response: Response) => ({
@@ -55,10 +55,10 @@ export const FetchResult = createMatchable({
 
 async function parseJson<TData>(
   response: Response,
-  wrap: (data: TData) => FetchResult<TData>,
+  wrap: (body: TData) => FetchResult<TData>,
 ): Promise<FetchResult<TData>> {
   return Json.match(await jsonOf<TData>(response), {
-    Ok: ({ data }): FetchResult<TData> => wrap(data),
+    Ok: ({ body }): FetchResult<TData> => wrap(body),
     Err: ({ err }): FetchResult<TData> => FetchResult.ParseError(err),
   });
 }
@@ -68,9 +68,9 @@ async function fromResponse<TData>(
 ): Promise<FetchResult<TData>> {
   return Http.match(Http.of(response), {
     Ok: ({ response: res }): Promise<FetchResult<TData>> =>
-      parseJson(res, (data) => FetchResult.Ok(data)),
+      parseJson(res, (body) => FetchResult.Ok(body)),
     Created: ({ response: res }): Promise<FetchResult<TData>> =>
-      parseJson(res, (data) => FetchResult.Created(data)),
+      parseJson(res, (body) => FetchResult.Created(body)),
     NoContent: (): Promise<FetchResult<TData>> =>
       Promise.resolve(FetchResult.NoContent()),
     Conflict: ({ response: res }): Promise<FetchResult<TData>> =>

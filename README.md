@@ -39,8 +39,8 @@ class UserApi extends ApiBase {
 
 const users = new UserApi(token);
 const name = FetchResult.match(await users.user("1"), {
-  Ok: ({ data }) => data.name,       // data: User
-  Created: ({ data }) => data.name,  // data: User
+  Ok: ({ body }) => body.name,       // body: User
+  Created: ({ body }) => body.name,  // body: User
   NoContent: () => "",
   Conflict: ({ status }) => `conflict ${status}`,
   ClientError: ({ status }) => `client ${status}`,
@@ -55,7 +55,7 @@ Omit an arm and TypeScript reports an error.
 
 ## Simple `Json` path — `getJson`
 
-Same request, body read immediately into `Ok.data`. Two arms only. `response.ok` (2xx) + JSON is `Ok`; 4xx/5xx are `Err` with `{ status, data }` (`data` is the parsed envelope). Network throws and 2xx parse failures are `Err` without that shape (`isHttpErr`). Empty 2xx bodies (204, HEAD) are parse `Err` — use `del` / `matchFetch` when there is no JSON.
+Same request, body read immediately into `Ok.body`. Two arms only. `response.ok` (2xx) + JSON is `Ok`; 4xx/5xx are `Err` with `{ status, body }` (`body` is the parsed envelope). Network throws and 2xx parse failures are `Err` without that shape (`isHttpErr`). Empty 2xx bodies (204, HEAD) are parse `Err` — use `del` / `matchFetch` when there is no JSON.
 
 ```ts
 import { getJson, Json, isHttpErr } from "@danrabydev/match-fetch";
@@ -65,7 +65,7 @@ type ApiError = { error: string };
 
 const result = await getJson<User, ApiError>("/users/1");
 const name = Json.match(result, {
-  Ok: ({ data }) => data.name, // data: User
+  Ok: ({ body }) => body.name, // body: User
   Err: ({ err }) =>
     isHttpErr(err) ? `http ${err.status}` : String(err),
 });
@@ -96,12 +96,12 @@ Timeout: `signal: AbortSignal.timeout(ms)` on `init`. Retry and interceptors are
 
 ## `FetchResult<TResponse>`
 
-One matchable. 200/201 parse JSON into `data: TResponse`. 204 does not parse. 4xx/5xx keep `{ response, status }` so you can read an error body (optionally with `jsonOf`). Network throws and JSON parse throws are their own variants.
+One matchable. 200/201 parse JSON into `body: TResponse`. 204 does not parse. 4xx/5xx keep `{ response, status }` so you can read an error body (optionally with `jsonOf`). Network throws and JSON parse throws are their own variants.
 
 | tag | when |
 | --- | --- |
-| `Ok` | 200, parsed JSON (`data`) |
-| `Created` | 201, parsed JSON (`data`) |
+| `Ok` | 200, parsed JSON (`body`) |
+| `Created` | 201, parsed JSON (`body`) |
 | `NoContent` | 204 |
 | `Conflict` | 409 |
 | `ClientError` | other 4xx |
@@ -168,7 +168,7 @@ Range names `ClientError`, `ServerError`, and `Other` are reserved, as are `of` 
 
 ### `jsonOf`
 
-`response.json()` without throwing. `getJson` uses this on 2xx (`Ok`) and on 4xx/5xx (`Err` `{ status, data }`). Status-table `get` still parses 200/201 into `FetchResult`.
+`response.json()` without throwing. `getJson` uses this on 2xx (`Ok`) and on 4xx/5xx (`Err` `{ status, body }`). Status-table `get` still parses 200/201 into `FetchResult`.
 
 ```ts
 import { jsonOf } from "@danrabydev/match-fetch";
@@ -182,8 +182,8 @@ const body = await jsonOf<ApiError>(response);
 
 | Need | What you get |
 | --- | --- |
-| Typed JSON client | `get<User>` → `FetchResult<User>`; `data` is `User` on 200/201 |
-| Ok / Err only (data already parsed) | `getJson<User, ApiError>` → `Json<User>`; HTTP `Err` is `{ status, data }` (`isHttpErr`) |
+| Typed JSON client | `get<User>` → `FetchResult<User>`; `body` is `User` on 200/201 |
+| Ok / Err only (body already parsed) | `getJson<User, ApiError>` → `Json<User>`; HTTP `Err` is `{ status, body }` (`isHttpErr`) |
 | Shared defaults | `class UserApi extends ApiBase` |
 | Exhaustive HTTP status | named 200/201/204/409, then 4xx/5xx ranges |
 | Network vs HTTP | `NetworkError` is a variant, not a thrown `TypeError` |

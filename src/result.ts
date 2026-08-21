@@ -1,6 +1,10 @@
 import { createMatchable } from "@danrabydev/match";
-import { Json, jsonOf } from "./json.js";
-import type { MatchableNamespace } from "./namespace.js";
+import { jsonOf } from "./json.js";
+import {
+  nsWithDiag,
+  type FetchDiag,
+  type MatchableNamespace,
+} from "./namespace.js";
 import { Http } from "./status.js";
 import { Transport } from "./transport.js";
 
@@ -53,45 +57,43 @@ export const FetchResult = createMatchable({
   ParseError: (err: unknown) => ({ err }),
 }) as unknown as MatchableNamespace<FetchResult, FetchResultCtors>;
 
-async function parseJson<TData>(
-  response: Response,
-  wrap: (body: TData) => FetchResult<TData>,
-): Promise<FetchResult<TData>> {
-  return Json.match(await jsonOf<TData>(response), {
-    Ok: ({ body }): FetchResult<TData> => wrap(body),
-    Err: ({ err }): FetchResult<TData> => FetchResult.ParseError(err),
-  });
-}
-
-async function fromResponse<TData>(
-  response: Response,
-): Promise<FetchResult<TData>> {
-  return Http.match(Http.of(response), {
-    Ok: ({ response: res }): Promise<FetchResult<TData>> =>
-      parseJson(res, (body) => FetchResult.Ok(body)),
-    Created: ({ response: res }): Promise<FetchResult<TData>> =>
-      parseJson(res, (body) => FetchResult.Created(body)),
-    NoContent: (): Promise<FetchResult<TData>> =>
-      Promise.resolve(FetchResult.NoContent()),
-    Conflict: ({ response: res }): Promise<FetchResult<TData>> =>
-      Promise.resolve(FetchResult.Conflict(res)),
-    ClientError: ({ response: res }): Promise<FetchResult<TData>> =>
-      Promise.resolve(FetchResult.ClientError(res)),
-    ServerError: ({ response: res }): Promise<FetchResult<TData>> =>
-      Promise.resolve(FetchResult.ServerError(res)),
-    Other: ({ response: res }): Promise<FetchResult<TData>> =>
-      Promise.resolve(FetchResult.Other(res)),
-  });
-}
-
 /** Map a transport attempt through default status + JSON parse (200/201 only). */
 export async function toFetchResult<TData>(
   attempt: Transport,
+  diag?: FetchDiag,
 ): Promise<FetchResult<TData>> {
-  return Transport.match(attempt, {
-    Err: ({ err }): Promise<FetchResult<TData>> =>
-      Promise.resolve(FetchResult.NetworkError(err)),
-    Ok: ({ response }): Promise<FetchResult<TData>> =>
-      fromResponse<TData>(response),
-  });
+  const FR = nsWithDiag(FetchResult, diag);
+
+  async function parseJson(
+    response: Response,
+    wrap: (body: TData) => FetchResult<TData>,
+  ): Promise<FetchResult<TData>> {
+    // Tag checks, not Json.match: the parsed value is discarded.
+    const parsed = await jsonOf<TData>(response);
+    return parsed.tag === "Ok" ? wrap(parsed.body) : FR.ParseError(parsed.err);
+  }
+
+  if (attempt.tag === "Err") {
+    return FR.NetworkError(attempt.err);
+  }
+
+  // Tag checks, not Http.match / Transport.match: those intermediates
+  // share tags with FetchResult (Ok, ServerError, …) and must not emit.
+  const mapped = Http.of(attempt.response);
+  switch (mapped.tag) {
+    case "Ok":
+      return parseJson(mapped.response, (body) => FR.Ok(body));
+    case "Created":
+      return parseJson(mapped.response, (body) => FR.Created(body));
+    case "NoContent":
+      return FR.NoContent();
+    case "Conflict":
+      return FR.Conflict(mapped.response);
+    case "ClientError":
+      return FR.ClientError(mapped.response);
+    case "ServerError":
+      return FR.ServerError(mapped.response);
+    case "Other":
+      return FR.Other(mapped.response);
+  }
 }

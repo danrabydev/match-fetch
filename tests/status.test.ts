@@ -113,6 +113,36 @@ describe("createStatusMatchable", () => {
     ).toThrowError("reserved status variant name: merge");
   });
 
+  it("throws on reserved peek at runtime", () => {
+    expect(() =>
+      createStatusMatchable({
+        peek: 200,
+      } as never),
+    ).toThrowError("reserved status variant name: peek");
+  });
+
+  it("rejects peek at the type level", () => {
+    expect(() =>
+      // @ts-expect-error peek is reserved by createMatchable
+      createStatusMatchable({ peek: 200 }),
+    ).toThrowError("reserved status variant name: peek");
+  });
+
+  it("throws on reserved withDiagnostics at runtime", () => {
+    expect(() =>
+      createStatusMatchable({
+        withDiagnostics: 500,
+      } as never),
+    ).toThrowError("reserved status variant name: withDiagnostics");
+  });
+
+  it("rejects withDiagnostics at the type level", () => {
+    expect(() =>
+      // @ts-expect-error withDiagnostics is reserved by createMatchable
+      createStatusMatchable({ withDiagnostics: 500 }),
+    ).toThrowError("reserved status variant name: withDiagnostics");
+  });
+
   it("requires every arm for a widened of() value", () => {
     const value = Http.of(res(200));
     const tag = Http.match(value, {

@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { Json, jsonOf } from "../src/index.js";
+import { isHttpErr, Json, jsonOf } from "../src/index.js";
 
 type User = { id: string; name: string };
 
@@ -26,5 +26,16 @@ describe("jsonOf", () => {
   it("specializes Json<User>", () => {
     const ok = Json.Ok({ id: "1", name: "ada" });
     expectTypeOf(ok).toEqualTypeOf<{ tag: "Ok"; body: User }>();
+  });
+});
+
+describe("isHttpErr", () => {
+  it("is true for { status, body }", () => {
+    expect(isHttpErr({ status: 404, body: { error: "nope" } })).toBe(true);
+    expect(isHttpErr({ status: 500, body: undefined })).toBe(true);
+  });
+
+  it("is false for Response (prototype body)", () => {
+    expect(isHttpErr(new Response(null, { status: 404 }))).toBe(false);
   });
 });

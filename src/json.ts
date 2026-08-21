@@ -15,9 +15,9 @@ export function isHttpErr<TErr = unknown>(err: unknown): err is HttpErr<TErr> {
   return (
     typeof err === "object" &&
     err !== null &&
-    "status" in err &&
-    typeof (err as { status: unknown }).status === "number" &&
-    "body" in err
+    Object.hasOwn(err, "status") &&
+    Object.hasOwn(err, "body") &&
+    typeof (err as { status: unknown }).status === "number"
   );
 }
 

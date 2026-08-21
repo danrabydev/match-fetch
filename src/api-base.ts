@@ -288,8 +288,8 @@ export class ApiBase {
       const response = await this.request(method, input, init, payload);
       if (!response.ok) {
         const parsed = await jsonOf<TErr>(response);
-        const body = parsed.tag === "Ok" ? parsed.body : undefined;
-        return Json.Err({ status: response.status, body });
+        const parsedBody = parsed.tag === "Ok" ? parsed.body : undefined;
+        return Json.Err({ status: response.status, body: parsedBody });
       }
       return jsonOf<TResponse>(response);
     } catch (err) {

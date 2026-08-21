@@ -1,3 +1,16 @@
+export {
+  diagnostics,
+  disableDiagnostics,
+  enableDiagnostics,
+  peek,
+  peeker,
+  peekTrace,
+  type DiagOptions,
+  type MatchTraceEvent,
+  type PeekTraceEvent,
+  type TraceEvent,
+} from "@danrabydev/match";
+
 export { Transport, matchFetch, type MatchFetchInit } from "./transport.js";
 
 export {
@@ -9,6 +22,8 @@ export {
 export { Json, jsonOf, isHttpErr, type HttpErr } from "./json.js";
 
 export { FetchResult, toFetchResult } from "./result.js";
+
+export type { FetchDiag } from "./namespace.js";
 
 export {
   get,

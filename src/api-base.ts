@@ -1,4 +1,5 @@
 import { jsonOf, Json, type Json as JsonOf } from "./json.js";
+import { nsWithDiag, type FetchDiag } from "./namespace.js";
 import { toFetchResult, type FetchResult } from "./result.js";
 import {
   splitInit,
@@ -42,9 +43,11 @@ function mergeHeaders(
 
 /**
  * Subclassable JSON client. Constructor options are default `RequestInit`
- * plus `baseUrl`. Per-request `init` overrides fields except headers, which
- * merge (request wins), and `signal`, which combines via `AbortSignal.any`
- * when both constructor and request provide one.
+ * plus `baseUrl` and optional `diagnostics` (stripped before `fetch`).
+ * Per-request `init` overrides fields except headers, which merge (request
+ * wins), and `signal`, which combines via `AbortSignal.any` when both
+ * constructor and request provide one. A per-request `diagnostics` mask
+ * replaces the constructor mask.
  */
 export class ApiBase {
   readonly #options: ApiBaseOptions;
@@ -210,11 +213,12 @@ export class ApiBase {
     init?: MatchFetchInit,
   ): Promise<Transport> {
     const method = init?.method ?? "GET";
+    const T = nsWithDiag(Transport, this.resolveDiag(init));
     try {
       const response = await this.request(method, input, init);
-      return Transport.Ok(response);
+      return T.Ok(response);
     } catch (err) {
-      return Transport.Err(err);
+      return T.Err(err);
     }
   }
 
@@ -224,6 +228,10 @@ export class ApiBase {
     if (typeof input !== "string") return input;
     if (isAbsoluteUrl(input)) return input;
     return joinBase(baseUrl, input);
+  }
+
+  private resolveDiag(init?: MatchFetchInit): FetchDiag | undefined {
+    return init?.diagnostics ?? this.#options.diagnostics;
   }
 
   private mergeInit(
@@ -269,11 +277,12 @@ export class ApiBase {
     init?: JsonVerbInit,
   ): Promise<FetchResult<TResponse>> {
     const payload = body === undefined ? undefined : JSON.stringify(body);
+    const diag = this.resolveDiag(init);
     try {
       const response = await this.request(method, input, init, payload);
-      return toFetchResult<TResponse>(Transport.Ok(response));
+      return toFetchResult<TResponse>(Transport.Ok(response), diag);
     } catch (err) {
-      return toFetchResult<TResponse>(Transport.Err(err));
+      return toFetchResult<TResponse>(Transport.Err(err), diag);
     }
   }
 
@@ -284,16 +293,18 @@ export class ApiBase {
     init?: JsonVerbInit,
   ): Promise<JsonOf<TResponse>> {
     const payload = body === undefined ? undefined : JSON.stringify(body);
+    const diag = this.resolveDiag(init);
+    const J = nsWithDiag(Json, diag);
     try {
       const response = await this.request(method, input, init, payload);
       if (!response.ok) {
-        const parsed = await jsonOf<TErr>(response);
+        const parsed = await jsonOf<TErr>(response, diag);
         const parsedBody = parsed.tag === "Ok" ? parsed.body : undefined;
-        return Json.Err({ status: response.status, body: parsedBody });
+        return J.Err({ status: response.status, body: parsedBody });
       }
-      return jsonOf<TResponse>(response);
+      return jsonOf<TResponse>(response, diag);
     } catch (err) {
-      return Json.Err(err);
+      return J.Err(err);
     }
   }
 }

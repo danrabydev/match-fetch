@@ -29,7 +29,26 @@ function smoke(api, label) {
   assert(typeof api.createStatusMatchable === "function", `${label}: createStatusMatchable`);
   assert(typeof api.ApiBase === "function", `${label}: ApiBase`);
   assert(typeof api.Http.of === "function", `${label}: Http.of`);
+  assert(typeof api.Http.withDiagnostics === "function", `${label}: Http.withDiagnostics`);
+  assert(typeof api.Http.peek === "function", `${label}: Http.peek`);
   assert(typeof api.FetchResult.match === "function", `${label}: FetchResult.match`);
+  assert(typeof api.FetchResult.peek === "function", `${label}: FetchResult.peek`);
+  assert(typeof api.Json.peek === "function", `${label}: Json.peek`);
+  assert(typeof api.peekTrace === "function", `${label}: peekTrace`);
+  assert(typeof api.peeker === "function", `${label}: peeker`);
+  assert(typeof api.diagnostics === "function", `${label}: diagnostics`);
+  assert(typeof api.enableDiagnostics === "function", `${label}: enableDiagnostics`);
+
+  const boundHttp = api.Http.withDiagnostics({
+    enabled: true,
+    branches: ["ServerError"],
+  });
+  const server = boundHttp.of(new Response(null, { status: 500 }));
+  api.Http.peek(server, { ServerError: () => {} });
+  assert(api.peekTrace(server).length === 1, `${label}: peekTrace after withDiagnostics of`);
+  const unbound = api.Http.of(new Response(null, { status: 500 }));
+  api.Http.peek(unbound, { ServerError: () => {} });
+  assert(api.peekTrace(unbound).length === 0, `${label}: unbound of has no trail`);
 
   const response = new Response(null, { status: 200 });
   const http = api.Http.of(response);

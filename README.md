@@ -164,7 +164,7 @@ const ApiHttp = createStatusMatchable({
 });
 ```
 
-Range names `ClientError`, `ServerError`, and `Other` are reserved, as are `of` (the mapper) and `merge` (`createMatchable` reserves it). Duplicate status codes throw at creation.
+Range names `ClientError`, `ServerError`, and `Other` are reserved, as are `of` (the mapper), `merge`, `peek`, and `withDiagnostics`. Duplicate status codes throw at creation.
 
 ### `jsonOf`
 
@@ -174,9 +174,55 @@ Range names `ClientError`, `ServerError`, and `Other` are reserved, as are `of` 
 import { jsonOf } from "@danrabydev/match-fetch";
 
 const body = await jsonOf<ApiError>(response);
+const traced = await jsonOf<ApiError>(response, {
+  enabled: true,
+  branches: ["Err"],
+});
 ```
 
 `ApiBase` exposes `protected request` / `requestGet` / `requestHead` / `requestDelete` / `requestPost` / `requestPut` / `requestPatch` for native `Response` (throws on network/abort). `protected matchFetch` wraps that in `Transport` (body unread). `protected requestJson` / `get` are the status-table JSON pipeline. `protected requestAsJson` / `getJson` parse immediately into `Json` (`Ok`/`Err`).
+
+## Diagnostics
+
+[`@danrabydev/match` 0.3](https://www.npmjs.com/package/@danrabydev/match) diagnostics are a **mask**, not a required logger. Pass `diagnostics` on `ApiBase` options or per-request `init` (per-request replaces the constructor mask). The key is stripped before `fetch`. Tagged values then record a trail for `peek` / `match`; read it with `peekTrace`.
+
+```ts
+import {
+  ApiBase,
+  FetchResult,
+  peeker,
+  peekTrace,
+} from "@danrabydev/match-fetch";
+
+const logErrors = peeker("http.errors", {
+  ServerError: ({ status }) => console.error(status),
+  NetworkError: ({ err }) => console.error(err),
+});
+
+class UserApi extends ApiBase {
+  constructor(token: string) {
+    super({
+      baseUrl: "https://api.example.com",
+      headers: { Authorization: `Bearer ${token}` },
+      diagnostics: {
+        enabled: true,
+        branches: ["ServerError", "NetworkError"],
+      },
+    });
+  }
+
+  user(id: string) {
+    return this.get<User>(`/users/${id}`);
+  }
+}
+
+const users = new UserApi(token);
+const result = await users.user("1");
+FetchResult.peek(result, logErrors);
+peekTrace(result);
+```
+
+`jsonOf(response, diag)`, `matchFetch(url, { diagnostics })`, and `toFetchResult(attempt, diag)` take the same mask. `Http.withDiagnostics(opts).of(response)` rebinds `of` so status values carry it. `enableDiagnostics(["ServerError"])` is a process-wide floor; `disableDiagnostics()` clears it (tests). `onPeek` / `onMatch` on the mask are optional.
 
 ## Why this pattern
 
@@ -188,6 +234,7 @@ const body = await jsonOf<ApiError>(response);
 | Exhaustive HTTP status | named 200/201/204/409, then 4xx/5xx ranges |
 | Network vs HTTP | `NetworkError` is a variant, not a thrown `TypeError` |
 | Raw `Response` | `matchFetch` + `Http.of` |
+| Opt-in peek/match trail | `diagnostics` on `ApiBase` / `init`; `peekTrace` |
 
 This is the TypeScript analogue of matching on a Rust `Result` and then on an HTTP status enum.
 

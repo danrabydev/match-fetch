@@ -49,6 +49,20 @@ describe("matchFetch", () => {
     expect(forwarded).not.toHaveProperty("fetch");
     expect(forwarded?.method).toBe("GET");
   });
+
+  it("does not forward diagnostics to fetch", async () => {
+    let forwarded: RequestInit | undefined;
+    const fetchImpl: typeof fetch = async (_input, init) => {
+      forwarded = init;
+      return new Response(null, { status: 200 });
+    };
+    await matchFetch("/x", {
+      fetch: fetchImpl,
+      diagnostics: { enabled: true, branches: ["Err"] },
+    });
+    expect(forwarded).not.toHaveProperty("diagnostics");
+    expect(forwarded).not.toHaveProperty("fetch");
+  });
 });
 
 describe("Transport", () => {

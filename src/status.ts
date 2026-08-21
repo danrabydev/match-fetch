@@ -1,12 +1,14 @@
 import { createMatchable } from "@danrabydev/match";
-import type { BoundMatch } from "./namespace.js";
+import type { BoundMatch, BoundPeek, FetchDiag } from "./namespace.js";
 
 type ReservedVariantName =
   | "ClientError"
   | "ServerError"
   | "Other"
   | "of"
-  | "merge";
+  | "merge"
+  | "peek"
+  | "withDiagnostics";
 
 const RESERVED_VARIANT_NAME_SET = new Set<string>([
   "ClientError",
@@ -14,6 +16,8 @@ const RESERVED_VARIANT_NAME_SET = new Set<string>([
   "Other",
   "of",
   "merge",
+  "peek",
+  "withDiagnostics",
 ]);
 
 type ForbidReservedKeys<Codes> = [
@@ -47,6 +51,8 @@ type StatusNamespace<Codes extends Record<string, number>> = {
   ) => Extract<StatusValue<Codes>, { tag: "ServerError" }>;
   Other: (response: Response) => Extract<StatusValue<Codes>, { tag: "Other" }>;
   match: BoundMatch<StatusValue<Codes>>;
+  peek: BoundPeek<StatusValue<Codes>>;
+  withDiagnostics: (opts: FetchDiag) => StatusNamespace<Codes>;
   _tags: readonly string[];
   of: (response: Response) => StatusValue<Codes>;
 };
@@ -61,6 +67,7 @@ function isReservedVariantName(name: string): name is ReservedVariantName {
  *
  * Payload is always `{ response, status }` — the `Response` is wrapped,
  * never spread (`createMatchable` copies enumerable own fields only).
+ * `withDiagnostics` rebinds `of` so mapped values carry the mask.
  */
 export function createStatusMatchable<const Codes extends Record<string, number>>(
   codes: ForbidReservedKeys<Codes>,
@@ -87,7 +94,11 @@ export function createStatusMatchable<const Codes extends Record<string, number>
     named[name] = (response: Response) => ({ response, status: code });
   }
 
-  const ns = createMatchable({
+  type StatusMatchNs = {
+    withDiagnostics: (opts: FetchDiag) => StatusMatchNs;
+  } & Record<string, unknown>;
+
+  const matchNs = createMatchable({
     ...named,
     ClientError: (response: Response) => ({
       response,
@@ -101,41 +112,52 @@ export function createStatusMatchable<const Codes extends Record<string, number>
       response,
       status: response.status,
     }),
-  } as never);
+  } as never) as unknown as StatusMatchNs;
 
-  const constructors = ns as unknown as Record<
-    string,
-    (response: Response) => StatusValue<Codes>
-  >;
+  function bindStatus(ns: StatusMatchNs): StatusNamespace<Codes> {
+    const constructors = ns as unknown as Record<
+      string,
+      (response: Response) => StatusValue<Codes>
+    >;
 
-  // Snapshot before assigning `of` so a colliding variant cannot recurse.
-  const lookup: Record<
-    string,
-    (response: Response) => StatusValue<Codes>
-  > = Object.create(null);
-  for (const name of Object.keys(named)) {
-    lookup[name] = constructors[name]!;
+    // Snapshot before assigning `of` so a colliding variant cannot recurse.
+    const lookup: Record<
+      string,
+      (response: Response) => StatusValue<Codes>
+    > = Object.create(null);
+    for (const name of Object.keys(named)) {
+      lookup[name] = constructors[name]!;
+    }
+    lookup.ClientError = constructors.ClientError!;
+    lookup.ServerError = constructors.ServerError!;
+    lookup.Other = constructors.Other!;
+
+    function of(response: Response): StatusValue<Codes> {
+      const name = byStatus.get(response.status);
+      if (name !== undefined) {
+        return lookup[name]!(response);
+      }
+      const status = response.status;
+      if (status >= 400 && status <= 499) {
+        return lookup.ClientError!(response);
+      }
+      if (status >= 500 && status <= 599) {
+        return lookup.ServerError!(response);
+      }
+      return lookup.Other!(response);
+    }
+
+    function withDiagnostics(opts: FetchDiag): StatusNamespace<Codes> {
+      return bindStatus(ns.withDiagnostics(opts));
+    }
+
+    return Object.assign(Object.create(null), ns, {
+      of,
+      withDiagnostics,
+    }) as unknown as StatusNamespace<Codes>;
   }
-  lookup.ClientError = constructors.ClientError!;
-  lookup.ServerError = constructors.ServerError!;
-  lookup.Other = constructors.Other!;
 
-  function of(response: Response): StatusValue<Codes> {
-    const name = byStatus.get(response.status);
-    if (name !== undefined) {
-      return lookup[name]!(response);
-    }
-    const status = response.status;
-    if (status >= 400 && status <= 499) {
-      return lookup.ClientError!(response);
-    }
-    if (status >= 500 && status <= 599) {
-      return lookup.ServerError!(response);
-    }
-    return lookup.Other!(response);
-  }
-
-  return Object.assign(ns, { of }) as unknown as StatusNamespace<Codes>;
+  return bindStatus(matchNs);
 }
 
 export const Http = createStatusMatchable({

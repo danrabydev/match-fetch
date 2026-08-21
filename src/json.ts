@@ -1,5 +1,9 @@
 import { createMatchable } from "@danrabydev/match";
-import type { MatchableNamespace } from "./namespace.js";
+import {
+  nsWithDiag,
+  type FetchDiag,
+  type MatchableNamespace,
+} from "./namespace.js";
 
 export type Json<TData = unknown, TErr = unknown> =
   | { tag: "Ok"; body: TData }
@@ -34,15 +38,18 @@ export const Json = createMatchable({
 /**
  * `response.json()` without throwing. `getJson` uses this on 2xx (`Ok`) and
  * on 4xx/5xx (`Err` `{ status, body }`). Status-table `get` uses this on
- * 200/201 (`Ok`/`Created` or `ParseError`).
+ * 200/201 (`Ok`/`Created` or `ParseError`). Optional `diag` binds the
+ * Json constructors (same mask as `MatchFetchInit.diagnostics`).
  */
 export async function jsonOf<TData = unknown>(
   response: Response,
+  diag?: FetchDiag,
 ): Promise<Json<TData>> {
+  const J = nsWithDiag(Json, diag);
   try {
     const body = (await response.json()) as TData;
-    return Json.Ok(body);
+    return J.Ok(body);
   } catch (err) {
-    return Json.Err(err);
+    return J.Err(err);
   }
 }

@@ -12,8 +12,8 @@ describe("jsonOf", () => {
     const result = await jsonOf<User>(response);
     expect(result.tag).toBe("Ok");
     if (result.tag === "Ok") {
-      expect(result.data).toEqual({ id: "1", name: "ada" });
-      expectTypeOf(result.data).toEqualTypeOf<User>();
+      expect(result.body).toEqual({ id: "1", name: "ada" });
+      expectTypeOf(result.body).toEqualTypeOf<User>();
     }
   });
 
@@ -25,6 +25,6 @@ describe("jsonOf", () => {
 
   it("specializes Json<User>", () => {
     const ok = Json.Ok({ id: "1", name: "ada" });
-    expectTypeOf(ok).toEqualTypeOf<{ tag: "Ok"; data: User }>();
+    expectTypeOf(ok).toEqualTypeOf<{ tag: "Ok"; body: User }>();
   });
 });

@@ -34,8 +34,8 @@ export class UserApi extends ApiBase {
 
 export function handleUser(result: FetchResultOf<User>): string {
   return FetchResult.match(result, {
-    Ok: ({ data }) => data.name,
-    Created: ({ data }) => data.name,
+    Ok: ({ body }) => body.name,
+    Created: ({ body }) => body.name,
     NoContent: () => "",
     Conflict: ({ status }) => `conflict ${status}`,
     ClientError: ({ status }) => `client ${status}`,
@@ -48,7 +48,7 @@ export function handleUser(result: FetchResultOf<User>): string {
 
 export function handleUserJson(result: JsonOf<User>): string {
   return Json.match(result, {
-    Ok: ({ data }) => data.name,
+    Ok: ({ body }) => body.name,
     Err: ({ err }) =>
       isHttpErr(err) ? `http ${err.status}` : `err: ${String(err)}`,
   });

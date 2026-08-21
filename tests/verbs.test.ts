@@ -34,8 +34,8 @@ describe("get / FetchResult", () => {
     });
     expect(result.tag).toBe("Ok");
     if (result.tag === "Ok") {
-      expect(result.data).toEqual({ id: "1", name: "ada" });
-      expectTypeOf(result.data).toEqualTypeOf<User>();
+      expect(result.body).toEqual({ id: "1", name: "ada" });
+      expectTypeOf(result.body).toEqualTypeOf<User>();
     }
   });
 
@@ -45,8 +45,8 @@ describe("get / FetchResult", () => {
     });
     expect(result.tag).toBe("Created");
     if (result.tag === "Created") {
-      expectTypeOf(result.data).toEqualTypeOf<User>();
-      expect(result.data.name).toBe("grace");
+      expectTypeOf(result.body).toEqualTypeOf<User>();
+      expect(result.body.name).toBe("grace");
     }
   });
 
@@ -106,11 +106,11 @@ describe("get / FetchResult", () => {
     expect(result.tag).toBe("ParseError");
   });
 
-  it("types Ok/Created data as TResponse and requires every arm", () => {
+  it("types Ok/Created body as TResponse and requires every arm", () => {
     const check = (result: FetchResult<User>) => {
       const name = FetchResult.match(result, {
-        Ok: ({ data }) => data.name,
-        Created: ({ data }) => data.name,
+        Ok: ({ body }) => body.name,
+        Created: ({ body }) => body.name,
         NoContent: () => "",
         Conflict: () => "",
         ClientError: () => "",
@@ -138,15 +138,15 @@ describe("get / FetchResult", () => {
 
   it("narrows constructor results to that arm; extra arms are allowed", () => {
     const ok = FetchResult.Ok({ id: "1", name: "ada" });
-    expectTypeOf(ok).toEqualTypeOf<{ tag: "Ok"; data: User }>();
+    expectTypeOf(ok).toEqualTypeOf<{ tag: "Ok"; body: User }>();
     const name = FetchResult.match(ok, {
-      Ok: ({ data }) => data.name,
+      Ok: ({ body }) => body.name,
     });
     expectTypeOf(name).toEqualTypeOf<string>();
     expect(name).toBe("ada");
 
     FetchResult.match(ok, {
-      Ok: ({ data }) => data.name,
+      Ok: ({ body }) => body.name,
       ParseError: () => "",
     });
   });
@@ -225,12 +225,12 @@ describe("getJson / postJson", () => {
     });
     expect(result.tag).toBe("Ok");
     if (result.tag === "Ok") {
-      expect(result.data).toEqual({ id: "1", name: "ada" });
-      expectTypeOf(result.data).toEqualTypeOf<User>();
+      expect(result.body).toEqual({ id: "1", name: "ada" });
+      expectTypeOf(result.body).toEqualTypeOf<User>();
     }
   });
 
-  it("maps 404 JSON to Err { status, data }", async () => {
+  it("maps 404 JSON to Err { status, body }", async () => {
     const result = await getJson<User, { error: string }>("/users/1", {
       fetch: fetchReturning(jsonResponse(404, { error: "nope" })),
     });
@@ -239,12 +239,12 @@ describe("getJson / postJson", () => {
       expect(isHttpErr(result.err)).toBe(true);
       if (isHttpErr<{ error: string }>(result.err)) {
         expect(result.err.status).toBe(404);
-        expect(result.err.data).toEqual({ error: "nope" });
+        expect(result.err.body).toEqual({ error: "nope" });
       }
     }
   });
 
-  it("maps 500 JSON to Err { status, data }", async () => {
+  it("maps 500 JSON to Err { status, body }", async () => {
     const result = await getJson<User, { error: string }>("/users/1", {
       fetch: fetchReturning(jsonResponse(500, { error: "boom" })),
     });
@@ -253,12 +253,12 @@ describe("getJson / postJson", () => {
       expect(isHttpErr(result.err)).toBe(true);
       if (isHttpErr<{ error: string }>(result.err)) {
         expect(result.err.status).toBe(500);
-        expect(result.err.data).toEqual({ error: "boom" });
+        expect(result.err.body).toEqual({ error: "boom" });
       }
     }
   });
 
-  it("maps non-JSON 404 to Err with undefined data", async () => {
+  it("maps non-JSON 404 to Err with undefined body", async () => {
     const result = await getJson<User>("/users/1", {
       fetch: async () => new Response("nope", { status: 404 }),
     });
@@ -267,7 +267,7 @@ describe("getJson / postJson", () => {
       expect(isHttpErr(result.err)).toBe(true);
       if (isHttpErr(result.err)) {
         expect(result.err.status).toBe(404);
-        expect(result.err.data).toBeUndefined();
+        expect(result.err.body).toBeUndefined();
       }
     }
   });
@@ -323,7 +323,7 @@ describe("getJson / postJson", () => {
     expect(method).toBe("POST");
     expect(body).toBe(JSON.stringify({ name: "ada" }));
     const name = Json.match(result, {
-      Ok: ({ data }) => data.name,
+      Ok: ({ body }) => body.name,
       Err: () => "",
     });
     expectTypeOf(name).toEqualTypeOf<string>();

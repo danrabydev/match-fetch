@@ -99,7 +99,7 @@ describe("ApiBase", () => {
     expect(used).toEqual(["default", "request"]);
   });
 
-  it("getJson returns Json with data already parsed", async () => {
+  it("getJson returns Json with body already parsed", async () => {
     const api = new ApiBase({
       fetch: async () => jsonResponse(200, { id: "1", name: "ada" }),
     });
@@ -107,8 +107,8 @@ describe("ApiBase", () => {
     expectTypeOf(result).toEqualTypeOf<Json<User>>();
     expect(result.tag).toBe("Ok");
     if (result.tag === "Ok") {
-      expectTypeOf(result.data).toEqualTypeOf<User>();
-      expect(result.data.name).toBe("ada");
+      expectTypeOf(result.body).toEqualTypeOf<User>();
+      expect(result.body.name).toBe("ada");
     }
   });
 

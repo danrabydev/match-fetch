@@ -2,7 +2,7 @@
 
 Fetch wrapper around [`@danrabydev/match`](https://www.npmjs.com/package/@danrabydev/match): transport failures, HTTP status, and JSON payloads are exhaustive tagged unions.
 
-Zero extra runtime dependencies beyond `match`. Building this repo requires **Node 22.18+** so tsdown can load `tsdown.config.ts` with native TypeScript stripping. The published `dist/` is ES2022.
+Zero extra runtime dependencies beyond `match`. Building this repo requires **Node 22.18+** (`nvm use 22`) so tsdown can load `tsdown.config.ts` (it needs `Promise.withResolvers` and native TypeScript stripping; Node 20 fails with a missing `unrun` module). The published `dist/` is ES2022.
 
 ## Installation
 

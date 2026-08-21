@@ -1,6 +1,6 @@
 {
   "name": "@danrabydev/match-fetch",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Fetch wrapper with exhaustive matchables for transport, HTTP status, and JSON",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -31,7 +31,7 @@
     "lint:package": "publint && attw --pack .",
     "typecheck": "tsc --noEmit",
     "check": "pnpm typecheck && pnpm test && pnpm build && pnpm test:dist && pnpm lint:package",
-    "prepublishOnly": "pnpm check",
+    "prepublishOnly": "node scripts/require-node-22.mjs && pnpm check",
     "publish:npm": "npm publish --access public --provenance"
   },
   "keywords": [

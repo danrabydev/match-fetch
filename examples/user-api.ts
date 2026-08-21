@@ -7,6 +7,7 @@ import {
   FetchResult,
   Json,
   isHttpErr,
+  type ApiBaseOptions,
   type FetchResult as FetchResultOf,
   type Json as JsonOf,
 } from "../src/index.js";
@@ -14,21 +15,34 @@ import {
 export type User = { id: string; name: string };
 export type NewUser = { name: string };
 
-export class UserApi extends ApiBase {
-  user(id: string) {
-    return this.get<User>(`/users/${id}`);
+export class UserApi extends ApiBase<{ region: string }> {
+  constructor(readonly region: string, options: ApiBaseOptions = {}) {
+    super({
+      baseUrl: "https://{region}.example.com",
+      ...options,
+    });
   }
 
-  create(body: NewUser) {
-    return this.post<NewUser, User>("/users", body);
+  user(id: string): Promise<FetchResultOf<User>> {
+    return this.get("/users/{id}", {
+      params: { region: this.region, id },
+    });
+  }
+
+  create(body: NewUser): Promise<FetchResultOf<User>> {
+    return this.post("/users", body, {
+      params: { region: this.region },
+    });
   }
 
   raw(path: string) {
-    return this.matchFetch(path);
+    return this.matchFetch(path, { params: { region: this.region } });
   }
 
-  userJson(id: string) {
-    return this.getJson<User>(`/users/${id}`);
+  userJson(id: string): Promise<JsonOf<User>> {
+    return this.getJson("/users/{id}", {
+      params: { region: this.region, id },
+    });
   }
 }
 
@@ -57,9 +71,9 @@ export function handleUserJson(result: JsonOf<User>): string {
 export function createUserApi(
   token: string,
   fetchImpl: typeof globalThis.fetch,
+  region = "api",
 ) {
-  return new UserApi({
-    baseUrl: "https://api.example.com",
+  return new UserApi(region, {
     headers: { Authorization: `Bearer ${token}` },
     fetch: fetchImpl,
   });

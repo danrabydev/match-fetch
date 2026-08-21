@@ -46,3 +46,5 @@ export {
   type JsonGetInit,
   type JsonVerbInit,
 } from "./api-base.js";
+
+export { MissingUrlParamError } from "./url-template.js";

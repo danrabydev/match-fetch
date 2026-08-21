@@ -20,24 +20,28 @@ import { ApiBase, FetchResult } from "@danrabydev/match-fetch";
 type User = { id: string; name: string };
 type NewUser = { name: string };
 
-class UserApi extends ApiBase {
-  constructor(token: string) {
+class UserApi extends ApiBase<{ region: string }> {
+  constructor(token: string, readonly region: string) {
     super({
-      baseUrl: "https://api.example.com",
+      baseUrl: "https://{region}.example.com/v1",
       headers: { Authorization: `Bearer ${token}` },
     });
   }
 
-  user(id: string) {
-    return this.get<User>(`/users/${id}`);
+  user(id: string): Promise<FetchResult<User>> {
+    return this.get("/users/{id}", {
+      params: { region: this.region, id },
+    });
   }
 
-  create(body: NewUser) {
-    return this.post<NewUser, User>("/users", body);
+  create(body: NewUser): Promise<FetchResult<User>> {
+    return this.post("/users", body, {
+      params: { region: this.region },
+    });
   }
 }
 
-const users = new UserApi(token);
+const users = new UserApi(token, "us");
 const name = FetchResult.match(await users.user("1"), {
   Ok: ({ body }) => body.name,       // body: User
   Created: ({ body }) => body.name,  // body: User
@@ -52,6 +56,21 @@ const name = FetchResult.match(await users.user("1"), {
 ```
 
 Omit an arm and TypeScript reports an error.
+
+## URL templates
+
+`{name}` in `baseUrl` and the path is filled from per-call `params`. The class generic is **shared** keys (`region`, `tenant`); per-endpoint ids come from that path’s `{id}`. Every call must pass the class keys. Path keys are required when the path is a string literal — annotate the return as `FetchResult<User>` (or omit `get<User>`) so TypeScript infers the path. Values are `encodeURIComponent`’d. A leftover `{name}` throws (`MissingUrlParamError`).
+
+```ts
+const api = new ApiBase<{ region: string }>({
+  baseUrl: "https://{region}.example.com/v1",
+});
+const result: FetchResult<User> = await api.get("/users/{id}", {
+  params: { region: "us", id: "1" },
+});
+```
+
+No placeholders and no class params → `init` stays optional. `Request` / `URL` inputs are not templated. Free verbs only require keys inferred from the path string.
 
 ## Simple `Json` path — `getJson`
 
@@ -235,6 +254,7 @@ peekTrace(result);
 | Network vs HTTP | `NetworkError` is a variant, not a thrown `TypeError` |
 | Raw `Response` | `matchFetch` + `Http.of` |
 | Opt-in peek/match trail | `diagnostics` on `ApiBase` / `init`; `peekTrace` |
+| Templated `baseUrl` / path | `{name}` + per-call `params`; class generic for shared keys |
 
 This is the TypeScript analogue of matching on a Rust `Result` and then on an HTTP status enum.
 

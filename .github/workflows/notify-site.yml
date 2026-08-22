@@ -2,6 +2,9 @@
 # Copied into each package repo from templates/package — or used via
 #   uses: danrabydev/com-danraby/.github/workflows/notify-site.yml@master
 # when that repo can access this one.
+#
+# Locked: workflow_dispatch / notify only run for github.repository_owner
+# danrabydev, and always dispatch to danrabydev/com-danraby (no site_repo input).
 name: Notify site
 
 on:
@@ -24,11 +27,6 @@ on:
         required: false
         type: string
         default: ""
-      site_repo:
-        description: Site repo that owns /publish
-        required: false
-        type: string
-        default: danrabydev/com-danraby
     secrets:
       COM_DANRABY_DISPATCH_TOKEN:
         required: true
@@ -54,19 +52,23 @@ permissions:
 jobs:
   notify:
     name: Dispatch package-published
+    if: github.repository_owner == 'danrabydev'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: repository_dispatch com-danraby
         env:
           GH_TOKEN: ${{ secrets.COM_DANRABY_DISPATCH_TOKEN }}
-          SITE_REPO: ${{ inputs.site_repo || 'danrabydev/com-danraby' }}
           REGISTRY: ${{ inputs.registry }}
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ inputs.version }}
           REPO: ${{ inputs.repo }}
         run: |
           set -euo pipefail
+          if [ "${GITHUB_REPOSITORY_OWNER}" != "danrabydev" ]; then
+            echo "Refusing to notify: repository owner must be danrabydev."
+            exit 1
+          fi
           if [ -z "${GH_TOKEN:-}" ]; then
             echo "COM_DANRABY_DISPATCH_TOKEN is missing."
             exit 1
@@ -93,6 +95,6 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${SITE_REPO}/dispatches" \
+            "https://api.github.com/repos/danrabydev/com-danraby/dispatches" \
             -d "$payload"
           echo "Dispatched package-published for ${REGISTRY} ${PACKAGE}@${VERSION}"

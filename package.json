@@ -46,9 +46,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://origin.cursor.com/git/danrabydev/match-fetch.git"
+    "url": "git+https://github.com/danrabydev/match-fetch.git"
   },
-  "homepage": "https://origin.cursor.com/git/danrabydev/match-fetch",
+  "bugs": {
+    "url": "https://github.com/danrabydev/match-fetch/issues"
+  },
+  "homepage": "https://github.com/danrabydev/match-fetch#readme",
   "publishConfig": {
     "access": "public"
   },

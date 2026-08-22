@@ -31,6 +31,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
+          # Trusted publishing needs npm ≥ 11.5.1; Node 24 ships a recent enough CLI.
           node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
@@ -51,8 +52,8 @@ jobs:
             echo "Publishing ${VERSION}."
           fi
 
+      # Auth via npm Trusted Publisher (OIDC). Do not set NODE_AUTH_TOKEN —
+      # an empty token overrides OIDC and fails the publish.
       - name: Publish to npm with provenance
         if: steps.version.outputs.skip != 'true'
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,6 +1,6 @@
 {
   "name": "@danrabydev/match-fetch",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Fetch wrapper with exhaustive matchables for transport, HTTP status, and JSON",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -46,9 +46,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://origin.cursor.com/git/danrabydev/match-fetch.git"
+    "url": "git+https://github.com/danrabydev/match-fetch.git"
   },
-  "homepage": "https://origin.cursor.com/git/danrabydev/match-fetch",
+  "bugs": {
+    "url": "https://github.com/danrabydev/match-fetch/issues"
+  },
+  "homepage": "https://danraby.dev/publish/match-fetch",
   "publishConfig": {
     "access": "public"
   },

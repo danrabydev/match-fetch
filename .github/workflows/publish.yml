@@ -17,6 +17,10 @@ jobs:
     name: publish to npm
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      published: ${{ steps.version.outputs.skip != 'true' }}
+      package: ${{ steps.version.outputs.package }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,9 +46,11 @@ jobs:
       - name: Skip if version already on npm
         id: version
         run: |
+          PACKAGE="$(node -p "require('./package.json').name")"
           VERSION="$(node -p "require('./package.json').version")"
+          echo "package=${PACKAGE}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          if npm view "@danrabydev/match-fetch@${VERSION}" version >/dev/null 2>&1; then
+          if npm view "${PACKAGE}@${VERSION}" version >/dev/null 2>&1; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "Version ${VERSION} already published; skipping."
           else
@@ -57,3 +63,16 @@ jobs:
       - name: Publish to npm with provenance
         if: steps.version.outputs.skip != 'true'
         run: npm publish --access public --provenance
+
+  notify-site:
+    needs: publish
+    if: needs.publish.outputs.published == 'true'
+    uses: ./.github/workflows/notify-site.yml
+    with:
+      registry: npm
+      package: ${{ needs.publish.outputs.package }}
+      version: ${{ needs.publish.outputs.version }}
+      repo: ${{ github.server_url }}/${{ github.repository }}
+    secrets:
+      COM_DANRABY_DISPATCH_TOKEN: ${{ secrets.COM_DANRABY_DISPATCH_TOKEN }}
+

@@ -2,7 +2,13 @@
 
 Read this before changing code. Shared source of truth: https://github.com/danrabydev/agent-notes/blob/main/common/coding-standards.md
 
-Cyber then QA before merge. No secrets in git, docs examples, or command/args.
+- Planning board: https://github.com/users/danrabydev/projects/8 (All work, filter by Group=Packages)
+- Status path: Todo → Need info → Implementation → Code review → QA → Cyber → Ready for release → Released
+- QA then Cyber before merge (a QA fix must not skip the security pass).
+- Every change must have an All work item and go through Packages weekly grooming before Implementation. No orphan work.
+- Do not link to users/danrabydev/projects/2 through /6.
+
+No secrets in git, docs examples, or command/args.
 
 ## TypeScript library
 
